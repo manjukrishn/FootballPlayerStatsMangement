@@ -1,0 +1,11 @@
+manjesh|manjesh|manju$
+manjukrishna|manju|1$
+*arun| |2$
+*arun|varun|2$
+*arun|varun|1$
+*harshan|dharshan|2$
+*harshan|dharshan|1$
+*arun|varun|2$
+varun|varun|2$
+manju|manju|2$
+
