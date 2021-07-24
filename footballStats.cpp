@@ -1,14 +1,19 @@
 #include <bits/stdc++.h>
-#include "Helper.h"
+#include <iostream>
+#include <iomanip>
+#include <unistd.h>
 #include "VariadicTable.h"
+#include "Decoration.h"
 using namespace std;
 
-
 class Player;
+Color::Modifier red(Color::FG_RED);
+Color::Modifier white(Color::FG_DEFAULT);
+Color::Modifier green(Color::FG_GREEN);
+Color::Modifier blue(Color::FG_BLUE);
 
 unordered_map<string,int> Indices;
 vector<Player> Players; // to sort the players according to the required fields
-
 
 class User{
     
@@ -179,6 +184,8 @@ class Player{
    }
 
 };
+
+
 static inline void ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
         return !std::isspace(ch);
@@ -207,6 +214,15 @@ bool isValidChoice(string option,int start,int end){
         return 1;
    }
    return 0;
+}
+
+bool menuWrapper(vector<string> menu,string &choice){
+   printMenu(menu);
+   seth(1);
+   paddedOutput(43,"Enter your choice: ");
+   getline(cin,choice);
+   choice = trim_copy(choice);
+   return isValidChoice(choice,1,menu.size());
 }
 
 int searchData(string player){
@@ -579,8 +595,12 @@ void admin(User u){
    
    while(1){
       string choice;
-      cout << "ADMIN\n";
-      cout << "1.Add\n2.Delete\n3.Update\n4.Signout\n";
+      heading();
+      paddedOutput(63,"ADMIN\n",1);
+      seth(2); 
+      paddedOutput(35,"1. SignIn\n");
+      paddedOutput(35,"2. SignUp\n");
+      paddedOutput(33,"3. Exit\n");
       getline(cin,choice);
       choice = trim_copy(choice);
       if(!isValidChoice(choice,1,4)){
@@ -763,9 +783,6 @@ void filterPlayers(){
          case 4:{
             string startingmin,endmin;
             readRange(startingmin,endmin,"minutes played");   
-            sort(Players.begin(),Players.end(),[](Player const &a,Player const &b)->bool{
-               return a.minutesplayed < b.minutesplayed;
-            });
             for(auto p:Players){
                if(p.minutesplayed >= startingmin and p.minutesplayed <= endmin)
                   player.push_back(p);
@@ -777,9 +794,6 @@ void filterPlayers(){
          case 5:{
             string startinggoal,endgoal;
             readRange(startinggoal,endgoal,"goals");
-            sort(Players.begin(),Players.end(),[](Player const &a,Player const &b)->bool{
-               return a.goals < b.goals;
-            });
             for(auto p:Players){
                if(p.minutesplayed >= startinggoal and p.minutesplayed <= endgoal)
                   player.push_back(p);
@@ -791,9 +805,6 @@ void filterPlayers(){
          case 6:{
             string startingtackles,endtackles;
             readRange(startingtackles,endtackles,"tackles");
-            sort(Players.begin(),Players.end(),[](Player const &a,Player const &b)->bool{
-               return a.tackles < b.tackles;
-            });
             for(auto p:Players){
                if(p.tackles >= startingtackles and p.tackles <= endtackles)
                   player.push_back(p);
@@ -806,9 +817,6 @@ void filterPlayers(){
          case 7:{
             string startingassists,endassists;
             readRange(startingassists,endassists,"assists");
-            sort(Players.begin(),Players.end(),[](Player const &a,Player const &b)->bool{
-               return a.assists < b.assists;
-            });
             for(auto p:Players){
                if(p.assists >= startingassists and p.assists <= endassists)
                   player.push_back(p);
@@ -821,9 +829,6 @@ void filterPlayers(){
          case 8:{
             string startingmom,endmom;
             readRange(startingmom,endmom,"man of the match awards");
-            sort(Players.begin(),Players.end(),[](Player const &a,Player const &b)->bool{
-               return a.assists < b.assists;
-            });
             for(auto p:Players){
                if(p.manofthematch >= startingmom and p.manofthematch <= endmom)
                   player.push_back(p);
@@ -836,9 +841,6 @@ void filterPlayers(){
          case 9:{
             string startingrating,endrating;
             readRange(startingrating,endrating,"rating");
-            sort(Players.begin(),Players.end(),[](Player const &a,Player const &b)->bool{
-               return a.rating < b.rating;
-            });
             for(auto p:Players){
                if(p.rating >= startingrating and p.rating <= endrating)
                   player.push_back(p);
@@ -912,42 +914,54 @@ void signUp(User u){
 }
 
 int signIn(User u){
+   heading();
    string username,password;
-   cout << "Enter username\n";
+   int exists;
+   paddedOutput(63,"Sign In\n",1);
+   seth(2); 
+   paddedOutput(35,"Enter username: "); 
    getline(cin,username);
-   cout << "Enter password\n";
+   cout << endl;
+   paddedOutput(35,"Enter password: "); 
    getline(cin,password);
-   
    username = trim_copy(username);
    password = trim_copy(password);
    u.setUserName(username);
    u.setPassword(password);
-   int exists = u.evaluate(2,username,password);
-   if(exists == 1)
-      cout << "Successfully signed in!\n";
+   exists = u.evaluate(2,username,password);
+   
+   if(exists == 1){
+      heading();
+      paddedOutput(75,"Successfully signed in!\n"); 
+      usleep(999000);
+   }
    else if(exists == 0){
-      cout << "User doesn't exist\n";
+      heading();
+      paddedOutput(72,"User doesn't exist\n"); 
+      usleep(999000);
       return -1;
    }
    else{
-      cout << "Passwords don't match\n";
+      heading();
+      paddedOutput(74,"Passwords don't match\n"); 
+      usleep(999000);
       return -1;
    }
-
    return u.isAdmin();
 }
 
 int main(){
-  
   string choice;
   User u;
   init();
+
   while(1){
-     cout << "1.SignIn\n2.SignUp\n3.Exit\n";
-     getline(cin,choice);
-     choice = trim_copy(choice);
-     if(!isValidChoice(choice,1,3)){
-        cout << "Invalid option\n";
+     vector<string> menu = {"SignIn","SignUp","Exit"};
+     bool valid = menuWrapper(menu,choice);
+     if(!valid){
+        heading();
+        paddedOutput(43,"Invalid choice\n");
+        usleep(700000);
         continue;
      }
      switch (stoi(choice)){
@@ -964,5 +978,6 @@ int main(){
         case 3:return 0;
     }
   }
+
   return 0;
 }
