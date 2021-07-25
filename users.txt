@@ -7,7 +7,8 @@ manjukrishna|manju|1$
 *harshan|dharshan|1$
 *arun|varun|2$
 varun|varun|2$
-manju|manju|2$
-
-3|3|2$
-||2$
+*anju|manju|2$
+*arun| |1$
+*anju|manju|1$
+*anju|manju|1$
+*anju|manju|2$

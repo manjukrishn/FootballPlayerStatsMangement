@@ -2,17 +2,14 @@
 #include <iostream>
 #include <iomanip>
 #include <unistd.h>
-#include "VariadicTable.h"
 #include "Decoration.h"
+#include "VariadicTable.h"
+
 using namespace std;
 
 class Player;
-Color::Modifier red(Color::FG_RED);
-Color::Modifier white(Color::FG_DEFAULT);
-Color::Modifier green(Color::FG_GREEN);
-Color::Modifier blue(Color::FG_BLUE);
 
-unordered_map<string,int> Indices;
+unordered_map<string,int> Indices,vectorIndices;
 vector<Player> Players; // to sort the players according to the required fields
 
 class User{
@@ -98,12 +95,15 @@ class User{
        file.close(); 
        return 0; // if user not present
     }
-    void makeAdmin(){
-      username = fileuser;
-      password = filepassword;
+    void makeAdmin(int opt){
+      if(opt == 2){
+         username = fileuser;
+         password = filepassword;
+      }
       role = "1";
     }
     void makeUser(){
+
       username = fileuser;
       password = filepassword;
       role = "2";
@@ -117,46 +117,29 @@ class Player{
 
    public:
    string name,nationality,age,club;
-   string playingPosition,minutesplayed,goals;
-   string assists,yellow,red,manofthematch,rating,tackles;
-   string buffer, temp[13];
+   string playingPosition,goals;
+   string assists,manofthematch,rating,tackles;
+   string buffer;
    
    void pack(){
        buffer.erase();
-       buffer = name + '|' + age + '|' + club + '|' + nationality + '|' + playingPosition + '|' + minutesplayed + '|';
-       buffer += goals + '|' + tackles + '|' + assists + '|' + manofthematch + '|' + red + '|' + yellow + '|' + rating +"$\n";
+       buffer = name + '|' + age + '|' + club + '|' + nationality + '|' + playingPosition + '|';
+       buffer += goals + '|' + tackles + '|' + assists + '|' + manofthematch + '|' + rating +"$\n";
    }
 
-   void setter(string playerdetails[13]){
+   void setter(string playerdetails[10]){
        name = playerdetails[0];
        age = playerdetails[1];
        club = playerdetails[2];
        nationality = playerdetails[3];
        playingPosition = playerdetails[4];
-       minutesplayed = playerdetails[5];
-       goals = playerdetails[6];
-       tackles = playerdetails[7];
-       assists = playerdetails[8];
-       manofthematch = playerdetails[9];
-       red = playerdetails[10];
-       yellow = playerdetails[11];
-       rating = playerdetails[12];
+       goals = playerdetails[5];
+       tackles = playerdetails[6];
+       assists = playerdetails[7];
+       manofthematch = playerdetails[8];
+       rating = playerdetails[9];
    }
 
-   void unpack_datafile(){
-
-      for(int i = 0; i < 16; i++){
-         temp[i].clear();
-      }
-      
-      int i = 0, k = 0;
-      
-      for(i = 0; i < buffer.length(); i++){
-         while(buffer[i] != '|' && buffer[i] != '$')
-           temp[k]+=buffer[i++];
-         k++;
-      }
-   }
 
    void write_to_data_file(){
       ofstream datafile;
@@ -164,66 +147,9 @@ class Player{
 
       datafile << buffer;
       datafile.close();
-
    }
-
-   void print_details(){
-      cout << "Name: " << name << '\n';
-      cout << "Age: " << age << '\n';
-      cout << "Club: " << club << '\n';
-      cout << "Nationality: " << nationality << '\n';
-      cout << "Playing position : " << playingPosition << '\n';
-      cout << "Total minutes player: " << minutesplayed << '\n';
-      cout << "Total goals scores: " << goals << '\n';
-      cout << "Total tackles made: " << tackles << '\n';
-      cout << "Total assists made: " << assists << '\n';
-      cout << "Total man of the match awards won: " << manofthematch << '\n';
-      cout << "Total yellow cards recieved: " << yellow << '\n';
-      cout << "Total red cards recieved: " << red << '\n';
-      cout << "Overall rating: " << rating << '\n';
-   }
-
 };
 
-
-static inline void ltrim(std::string &s) {
-    s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }));
-}
-
-static inline void rtrim(std::string &s) {
-    s.erase(std::find_if(s.rbegin(), s.rend(), [](unsigned char ch) {
-        return !std::isspace(ch);
-    }).base(), s.end());
-}
-
-static inline void trim(std::string &s) {
-    ltrim(s);
-    rtrim(s);
-}
-
-static inline std::string trim_copy(std::string s) {
-   trim(s);
-   return s;
-}
-
-bool isValidChoice(string option,int start,int end){
-   for(int i = start; i <= end; i++){
-      if(to_string(i) == option)
-        return 1;
-   }
-   return 0;
-}
-
-bool menuWrapper(vector<string> menu,string &choice){
-   printMenu(menu);
-   seth(1);
-   paddedOutput(43,"Enter your choice: ");
-   getline(cin,choice);
-   choice = trim_copy(choice);
-   return isValidChoice(choice,1,menu.size());
-}
 
 int searchData(string player){
    if(Indices.find(player) != Indices.end())
@@ -243,7 +169,7 @@ void init(){
       if(buffer.length() > 0 and buffer[0] != '*'){
          int i = 0;
          string name;
-         string currPlayer[13];
+         string currPlayer[10];
          name.erase();
          while(buffer[i] != '|'){
             name += buffer[i];             
@@ -266,59 +192,21 @@ void init(){
          Player p;
          p.setter(currPlayer);
          Players.push_back(p);
+         vectorIndices[name] = Players.size()-1;
       } 
    }
+   file.close();
 }
 
 
 void addToIndex(string name){
+   int pos;
    fstream file;
-   file.open("players.txt",ios::in);
-   Indices[name] = file.tellg();
+   
+   file.open("players.txt",ios::in|ios::ate);
+   pos = file.tellg();
+   Indices[name] = pos;
    file.close();
-}
-
-bool getter(Player& p){
-   string player[13];
-
-   cout << "Enter name\n";
-   getline(cin,player[0]);
-
-   if(Indices.find(trim_copy(player[0])) != Indices.end())
-     return 1;
-   cout << "Enter age\n";
-   getline(cin,player[1]);
-   cout << "Enter club\n";
-   getline(cin,player[2]);
-   cout << "Enter nationality\n";
-   getline(cin,player[3]);
-   cout << "Enter playing position Eg: CF,RW,LW,CM,AM,WB,FB,GK\n"; 
-   getline(cin,player[4]);
-   cout << "Enter number of minutes played\n";
-   getline(cin,player[5]);
-   cout << "Enter the number of goals scored\n";
-   getline(cin,player[6]);
-   cout << "Enter the number of tackles made\n";
-   getline(cin,player[7]);
-   cout << "Enter the number of assists made\n";
-   getline(cin,player[8]);
-   cout << "Enter the number of MOM awards recieved\n";
-   getline(cin,player[9]);
-   cout << "Enter the number of red cards recieved\n";
-   getline(cin,player[10]);
-   cout << "Enter the number of yellow cards recieved\n";
-   getline(cin,player[11]);
-   cout << "Enter the total rating\n";
-   getline(cin,player[12]);
-
-   for(int i = 0; i < 13; i++)
-     player[i] = trim_copy(player[i]);
-
-   addToIndex(player[0]);
-   p.setter(player);
-   p.pack();
-   p.write_to_data_file();
-   return 0;
 }
 
 void deleteFromUserFile(string username){
@@ -355,161 +243,198 @@ void deleteFromPlayerFile(int pos){
 
    file.seekp(pos,ios::beg);
    file.put('*'); 
+   file.close();
 }
+
+bool getter(Player& p){
+   string player[10];
+   string variable[10] = {"name","age","club","nationality","playing position Eg: CF,RW,LW,CM,AM,WB,FB,GK", 
+     "number of goals scored","number of tackles made","number of assists made","number of MOM awards recieved",
+     "total rating"
+   };
+
+   player[0] = form("name");
+   if(Indices.find(trim_copy(player[0])) != Indices.end())
+     return 1;
+   
+   for(int i = 1; i < 10; i++)
+     player[i] = form(variable[i]);
+
+   addToIndex(player[0]);
+   p.setter(player);
+   p.pack();
+   p.write_to_data_file();
+   return 0;
+}
+
 
 void addCaseAdmin(User u){
    string choice,username;
    User newUser;
-   cout << "ADMIN\n";
-   cout << "1.Add new admin\n2.Add new player\n";
-   getline(cin,choice);
+   bool valid;
 
-   choice = trim_copy(choice);
-   if(!isValidChoice(choice,1,2)){
-      cout << "Invalid option\n";
+   cout << "ADMIN\n";
+   vector<string> menu = {"Add new admin","Add new player"};
+   valid = menuWrapper(menu,choice,"ADMIN");
+   
+   if(!valid){
+      message("Invalid option",60);
       return;
    }
    switch(stoi(choice)){
       case 1: {
-         cout << "Enter username\n";
-         getline(cin,username);
-
-         username = trim_copy(username);
+         username = form("username");
+         
          int exists = newUser.evaluate(0,username," ");              
          
          if(exists == 0){
             newUser.setUserName(username);
-            newUser.makeAdmin();
+            newUser.makeAdmin(1);
             newUser.setPassword(" ");
             newUser.pack();
             newUser.write_to_file();
-            cout << "New admin created!\n";
+            message("New admin created!",60);
          }else{
-            cout << "User already exists\n";
+            message("User already exists!",60);
             deleteFromUserFile(username);
-            newUser.makeAdmin();
+            newUser.makeAdmin(2);
             newUser.pack();
             newUser.write_to_file();
-            cout << "User promoted to admin!\n";
+            message("User promoted to admin!",60);
          }
          break;
       }
       case 2: {
          int n;
          string c;
-         cout << "Enter the number of players\n";
-         getline(cin,c);
 
-         c = trim_copy(c);
-         n = stoi(c);
+         c = form("number of players");
+         try{
+       
+            n = stoi(c);
 
-         Player p[n];
-         int i = 0;
+            int i = 0;
+            Player p[n];
 
-         while(i < n){
-            if(!getter(p[i])){
-               cout << "Player added successfully!\n";
-            }else{
-               cout << "Player already present in the file!\n";
-               cout << "Enter 1 to exit\n";
-               string ch;
-               getline(cin,ch);      
-                
-               ch = trim_copy(ch);        
-               if(ch == "1")
-                break;
+            while(i < n){
+               if(!getter(p[i])){
+                  
+                  Players.push_back(p[i]);
+                  vectorIndices[p[i].name] = Players.size()-1;
+                  message("Player added successfully!",50);
+               
+               }else{
+
+                  string ch;
+                  message("Player already present in the file!",50);                
+                  ch = form("1 to exit or any other key to continue");                
+                  if(ch == "1")
+                    break;
+                    
+               }
+               i++;
             }
-            i++;
+         }catch(...){
+            message("Invalid choice",60);
          }
          break;
       }
-      default: cout << "Invalid choice\n";
-      break;   
+
+      default:  message("Invalid choice",60); break;   
    } 
 }
 
 void removeCaseAdmin(User u){
    string choice,username;
    User newUser;
-   cout << "ADMIN\n";
-   cout << "1.Remove user\n2.Remove player\n";
-   getline(cin,choice);
-   choice = trim_copy(choice);
-   if(!isValidChoice(choice,1,2)){
-      cout << "Invalid option\n";
+   bool valid;
+
+   vector<string> menu = {"Remove user","Remove player"};
+   valid = menuWrapper(menu,choice,"ADMIN");
+
+   if(!valid){
+      message("Invalid option",60);
       return;
    }
    switch(stoi(choice)){
       case 1: {
-         cout << "Enter username\n";
-         getline(cin,username);
-
-         username = trim_copy(username);
-         int exists = newUser.evaluate(1,username," ");
+         int exists;
+         
+         username = form("username");
+         exists = newUser.evaluate(1,username," ");
 
          if(exists){
             deleteFromUserFile(username);
-            cout << "User successfully deleted!\n";
+            message("User successfully created",50);
          }else{
-            cout << "User doesn't exist\n";
+            message("User doesn't exist",55);
          }
          break;
       }
       case 2: {
          int n;
-         string c;
-         cout << "Enter the number of players\n";
-         getline(cin,c);
+         string c,playername;
 
-         c = trim_copy(c);
-         n = stoi(c);
-         string playername;
-         for(int i = 0; i < n; i++){
-            cout << "Enter the player name\n";
-            getline(cin,playername);
-            playername = trim_copy(playername);
-            if(Indices.find(playername) != Indices.end()){
-               int pos = Indices[playername];
-               deleteFromPlayerFile(pos);
-               Indices.erase(playername);
-               cout << "Player deleted successfully!\n";  
-            }else{
-               cout << "Player not present!\n";
+         c = form("number of players");
+        
+         try{
+
+            n = stoi(c);
+
+            for(int i = 0; i < n; i++){
+               playername = form("player name");
+               if(Indices.find(playername) != Indices.end()){
+                  int pos = Indices[playername];
+                  deleteFromPlayerFile(pos);
+                  Indices.erase(playername);  
+                  Players.erase(Players.begin()+vectorIndices[playername]);
+                  vectorIndices.erase(playername);
+                  message("Player deleted successfully",50);
+               }else{
+                  message("Player not present",60);
+               }
             }
-         }
+
+         }catch(...){
+            message("Invalid option",60); 
+         }      
          break;
       }
-      default: cout << "Invalid choice\n";
+      default: message("Invalid choice",60);
       break;   
    } 
 }
 void updatePlayer(string playername){
-   string variables[13] = {
+   vector<string> variables = {
       "name","age","club","nationality","playingPosition",
-      "minutesplayed","goals","tackles","assists","manofthematch","red","yellow","rating"
+      "goals","tackles","assists","manofthematch","rating"
    };
-   for(int i = 0 ; i < 13; i++)
-     cout << variables[i] << " ";
-   cout << '\n';
-   cout << "Enter field to be updated\nEnter integer between 1 and 14\n";
-  
    string option;
-   getline(cin,option);
-   option = trim_copy(option);
-   if(isValidChoice(option,1,14)){
+   bool valid;
+
+   valid = menuWrapper(variables,option); 
+  
+   if(valid){
       Player p;
-      int i = 0, k = 0,pos = Indices[playername];
-      string val,buff,newPlayer[13];
-      cout << "Enter new value for the attribute \'" << variables[stoi(option)-1] << "\'\n";
-      getline(cin,val);
-      val = trim_copy(val);
+      int i = 0, k = 0,pos = Indices[playername],index = vectorIndices[playername];
+      string val,buff,newPlayer[10];
+      
+      for(int i = 0 ; i < 10; i++)
+       newPlayer[i].erase();
+
+      string m = "new value for the attribute \'" + variables[stoi(option)-1] + "\'";
+      val = form(m);
+      
       fstream file("players.txt",ios::in | ios::out);
       file.seekg(pos,ios::beg);
       buff.erase();
       getline(file,buff);
-      deleteFromPlayerFile(pos);
       Indices.erase(playername);
-      addToIndex(newPlayer[0]);
+      vectorIndices.erase(playername);
+      Players.erase(Players.begin()+index);
+      deleteFromPlayerFile(pos);
+      file.close();
+      
       while(i < buff.length()){
          while(buff[i] != '|' and buff[i] != '$'){
             newPlayer[k]+=buff[i];
@@ -518,93 +443,126 @@ void updatePlayer(string playername){
          k++;
          i++;
       }
+
       newPlayer[stoi(option)-1] = val;
       p.setter(newPlayer);
       p.pack();
+      addToIndex(newPlayer[0]);
+      Players.push_back(p);
+      vectorIndices[newPlayer[0]] = Players.size()-1;
       p.write_to_data_file();
    } 
    else{ 
-        cout << "Please enter a valid option\n";
+      message("Please enter a valid option",50);
    }
 }
+
+void displayPlayers(vector<Player> arr){
+   fstream file1;
+   file1.open("dummy.txt",ios::out);
+   VariadicTable<string, string, string, string,string, string, string, string,string,string> 
+          vt({"Name", "Age", "Club", "Nationality","Position","Goals","Tackles","Assists","MOM awards","Total rating"});
+
+   for(auto p: arr){
+      vt.addRow(p.name, p.age, p.club, p.nationality,p.playingPosition,p.goals,p.tackles,p.assists,
+      p.manofthematch,p.rating);
+   }
+   vt.print(file1);
+   file1.close();
+   fstream file2("dummy.txt",ios::in);
+   heading();
+   string row;
+
+   while(file2.good()){
+      getline(file2,row);
+      cout << setw(w/2-row.length()/2);
+      for(auto ch: row){
+         cout << ch;
+      }
+      cout << endl; 
+   }
+   cout << setw(0);
+   string choice = form("1 to exit");
+   if(choice == "1")
+     return;
+}
+
 void updateCaseAdmin(User u){
-   system("clear");
    
+   bool valid;
    string choice;
-   cout << "ADMIN\n";
-   cout << "1.Update user\n2.Update player\n";
-   getline(cin,choice);
-   choice = trim_copy(choice);
-   if(!isValidChoice(choice,1,2)){
-      cout << "Invalid option\n";
+
+   vector<string> menu = {"Update user","Update player"};
+   valid = menuWrapper(menu,choice,"ADMIN");
+
+   if(!valid){
+      message("Invalid choice",60);
       return;
    }
-   switch (stoi(choice))
-   {
+   switch (stoi(choice)){
       case 1: {
+         int exist;
          string username;
          User newUser;
-         cout << "Enter username to be updated\n";
-         getline(cin,username);
-         username = trim_copy(username);
-         int exist = newUser.evaluate(0,username," ");
+
+         username = form("username to be updated");
+         exist = newUser.evaluate(0,username," ");
+         
          if(exist){
             string role;
-            cout << "Enter new role.\n Accepted roles (Enter 1 or 2):\n 1.Admin user\n 2.Normal user --> 2\n";
-            getline(cin,role);
-            role = trim_copy(role);
+            bool valid;
+
+            vector<string> menu = {"Admin user","Normal user"};
+            valid = menuWrapper(menu,role,"ADMIN");
+
             if(role == "1" or role == "2"){
                deleteFromUserFile(username);   
                if(role == "2"){
                   newUser.makeUser();
                }else{
-                  newUser.makeAdmin();
+                  newUser.makeAdmin(2);
                }
                newUser.pack();
                newUser.write_to_file();
             }else{
-               cout << "Entered role is invalid!\n";
+               message("Entered role is invalid",50);
             }
          }else{
-            cout << "User doesn't exist!\n";
+            message("User doesn't exist",50);
          }
       }
       break;
 
       case 2: {
+         int exist;
          string playername;
          Player newPlayer;
-         cout << "Enter player to be updated\n";
-         getline(cin,playername);
-         playername = trim_copy(playername);
-         int exist = searchData(playername);
+
+         playername = form("player to be updated");
+         exist = searchData(playername);
+         
          if(exist){
             updatePlayer(playername);            
          }else{
-            cout << "Player doesn't exist!\n";
+            message("Player doesn't exist",50);
          }
       }
       break;
    
-      default: cout << "Invalid choice\n";
-         break;
+      default: message("Invalid choice",60);break;
    }
 }
 
 void admin(User u){
    
    while(1){
+      bool valid;
       string choice;
-      heading();
-      paddedOutput(63,"ADMIN\n",1);
-      seth(2); 
-      paddedOutput(35,"1. SignIn\n");
-      paddedOutput(35,"2. SignUp\n");
-      paddedOutput(33,"3. Exit\n");
-      getline(cin,choice);
-      choice = trim_copy(choice);
-      if(!isValidChoice(choice,1,4)){
-        cout << "Invalid option\n";
+      vector<string> menu = {"Add","Remove","Update","Sign out"};
+      valid = menuWrapper(menu,choice,"ADMIN");
+
+      if(!valid){
+        message("Invalid option",60);
         continue;
       }
       switch (stoi(choice))
@@ -619,14 +577,14 @@ void admin(User u){
 
 void searchAPlayer(){
    Player p;
-   string playername,buff,player[13];
+   string playername,buff,player[10];
    buff.erase();
-   playername.erase();
-   cout << "Enter the player name\n";
-   getline(cin,playername);
-   playername = trim_copy(playername);
+
+   playername = form("player name");
+   
    if(searchData(playername)){
-      cout << "Player found!\n";
+      message("Player found!",60);
+      vector<Player> playerDetails;
       fstream file;
       file.open("players.txt",ios::in);
       file.seekg(Indices[playername],ios::beg);
@@ -643,231 +601,207 @@ void searchAPlayer(){
          i++;
       }
       p.setter(player);
-      p.print_details();
+      playerDetails.push_back(p);
+      system("clear");
+      displayPlayers(playerDetails);
+      playerDetails.clear();
+      file.close();
    }else{
-      cout << "Player not found!\n";
+      message("Player not found!",60);
    }
 }
 
-void displayPlayers(vector<Player> arr){
-   cout << " Name " << " Age " << " Club " << " Nationality " << " Playing position " << " Minutes played ";
-   cout << " Goals " << " Tackles " << " Assists " << " MOM awards " << " Yellow cards " << " Red cards ";
-   cout << " Rating\n";
-   for(auto p: arr){
-      cout << p.name << " " << p.age << " " <<  p.club  <<  " " << p.nationality << " " <<  p.playingPosition << " " << p.minutesplayed << " ";
-      cout << p.goals << " " << p.tackles << " " << p.assists << " " << p.manofthematch << " " << p.yellow << " " <<  p.red << " ";
-      cout << p.rating << '\n';
-   }
-}
+
+// void displayPlayers(vector<Player> arr){
+   
+//    string variables[13] = {
+//       "Name", "Age", "Club", "Nationality","Position","Minutes played","Goals",
+//       "Tackles", "Assists","MOM awards","Yellow cards","Red cards","Total rating"
+//    };
+  
+//    cout << right << setw(5) << "Name" << setw(5) << "Age" << setw(5) << "Club" << setw(12);
+//    cout << "Nationality" << setw(10) << "Position" << setw(15) << "Minutes played" << setw(15);
+//    cout << "Goals scored" << setw(10) << "Tackles" << setw(10) << "Assists" << setw(12) << "MOM awards";
+//    cout << setw(15) << "Yellow cards" << setw(10) << "Red cards" << setw(15) << "Total rating";
+   
+// }
+
 void sortPlayers(){
    string choice;
-   cout << "Select sort options\n";
-   cout << "1.Goals scored\n2.Tackles made\n3.Assists made\n4.No. of man of the match awards\n";
-   cout << "5.Total rating\nEnter numbers between 1 and 7";
-   getline(cin,choice);
-   choice = trim_copy(choice);
-   int opt = -1;
-   bool valid = false;
-   for(int i = 1; i <= 5; i++){
-      if(to_string(i) == choice){
-         valid = true;
-         opt = i;
-         break;
-      }
-   }
-
+   bool valid;
+   vector<string> menu;
+   menu = {"Goals scored","Tackles made","Assists made","No. of man of the match awards","Total rating"};
+   
+   valid = menuWrapper(menu,choice,"Select sort options");
+   
    if(valid){
-      switch (opt){
+      switch (stoi(choice)){
         case 1:{
-           sort(Players.begin(),Players.end(),[](Player &a, Player &b) -> bool{ 
-             return a.goals < b.goals; 
+           sort(Players.begin(),Players.end(),[](Player const &a, Player const &b) -> bool{ 
+             return stoi(a.goals) < stoi(b.goals); 
           });
         }
         break;
         case 2:sort(Players.begin(),Players.end(),[](Player const &a, Player const &b)->bool{
-           return a.tackles < b.tackles;
+           return stoi(a.tackles) < stoi(b.tackles);
         });
         break;
         case 3:sort(Players.begin(),Players.end(),[](Player const &a, Player const &b)->bool{
-           return a.assists < b.assists;
+           return stoi(a.assists) < stoi(b.assists);
         });break;
         case 4:sort(Players.begin(),Players.end(),[](Player const &a,Player const &b)->bool{
-           return a.manofthematch < b.manofthematch;
+           return stoi(a.manofthematch) < stoi(b.manofthematch);
         });
         break;
         case 5:sort(Players.begin(),Players.end(),[](Player const &a,Player &b)->bool{
-           return a.rating < b.rating;
+           return stof(a.rating) < stof(b.rating);
         });
         break;
-        default: cout << "Invalid choice\n";
+        default: message("Invalid choice",60);
       }
-      cout << "Player list sorted!\n";
+      message("Player list sorted!",60);
    }else{
-      cout << "Invalid choice\n";
+        message("Invalid choice",60);
    }
 }
 
 void readRange(string &a,string &b,string what){
-   cout << "Enter range for \'" << what << "\'" << endl;
-   cout << "Enter the lower bound\n";
-   getline(cin,a);
-   a = trim_copy(a);
-   cout << "Enter the upper bound\n";
-   getline(cin,b);    
-   b = trim_copy(b);
+   a = form("lower bound for "+what);
+   b = form("upper bound for "+what);
 }
+
 void filterPlayers(){
-   string variables[9] = {
-      "club","nationality","playing position","minutes played","goals scored","tackles made","assists","man of the match awards","rating",
-   },choice;
+   string choice;
    vector<Player> player;
+   bool valid;
 
-   cout << "Select filter options\n";
-   cout << "1.Club\n2.National team\n3.Playing position\n4.No. of minutes played\n";
-   cout << "5.No. of goals scored\n6.No. of tackles made\n7.No. of assists\n";
-   cout << "8.No. of man of match awards\n9.Player rating\nEnter numbers between 1 and 9";
-   getline(cin,choice);
-   choice = trim_copy(choice);
-
-   int opt = -1;
-   bool valid = false;
-   for(int i = 1; i <= 9; i++){
-      if(to_string(i) == choice){
-         valid = true;
-         opt = i;
-         break;
-      }
-   }
+   vector<string> menu = {
+      "Club","National team","Playing Position","No. of goals scored",
+      "No. of tackles made","No. of assists","No. of man of match awards","Player rating"  
+   };
+   valid = menuWrapper(menu,choice);
 
    if(valid){  
-      switch(opt){
+      switch(stoi(choice)){
          case 1:{
             string club;
-            cout << "Enter club to be searched\n";
-            getline(cin,club);
-            club = trim_copy(club);
+            club = form("club to be searched");
+
             for(auto p:Players){
                if(p.club == club)
                   player.push_back(p);
             }
+            
             cout << "Players playing for the club are : \n";
             displayPlayers(player);
             break;
          }
          case 2:{
             string nationalteam;
-            cout << "Enter national team to be searched\n";
-            getline(cin,nationalteam);
-            nationalteam = trim_copy(nationalteam);
+            nationalteam = form("national team to be searched");
+            
             for(auto p:Players){
                if(p.nationality == nationalteam)
                   player.push_back(p);
             }
+            
             cout << "Players playing for the given nation are : \n";
             displayPlayers(player);
             break;
          }
          case 3:{
             string playingpos;
-            cout << "Enter the playing the position\n";
-            getline(cin,playingpos);
-            playingpos = trim_copy(playingpos);
+            playingpos = form("playing position");
+            
             for(auto p:Players){
                if(p.playingPosition == playingpos)
                   player.push_back(p);
             }
+            
             cout << "Players playing in the given position are: \n";
             displayPlayers(player);
             break;
          }
          case 4:{
-            string startingmin,endmin;
-            readRange(startingmin,endmin,"minutes played");   
+            string startinggoals,endgoals;
+            readRange(startinggoals,endgoals,"goals");
+           
             for(auto p:Players){
-               if(p.minutesplayed >= startingmin and p.minutesplayed <= endmin)
+               if(stoi(p.goals) >= stoi(startinggoals) and stoi(p.goals) <= stoi(endgoals))
                   player.push_back(p);
             }
-            cout << "Players within the range are: \n";
+            cout << "Players within the range " + startinggoals + " and " + endgoals + " are : \n";
             displayPlayers(player);
             break;
          }
          case 5:{
-            string startinggoal,endgoal;
-            readRange(startinggoal,endgoal,"goals");
-            for(auto p:Players){
-               if(p.minutesplayed >= startinggoal and p.minutesplayed <= endgoal)
-                  player.push_back(p);
-            }
-            cout << "Players within the range are: \n";
-            displayPlayers(player);
-            break;
-         }
-         case 6:{
             string startingtackles,endtackles;
             readRange(startingtackles,endtackles,"tackles");
             for(auto p:Players){
-               if(p.tackles >= startingtackles and p.tackles <= endtackles)
+               if(stoi(p.tackles) >= stoi(startingtackles) and stoi(p.tackles) <= stoi(endtackles))
                   player.push_back(p);
             }
-            cout << "Players within the range are: \n";
+            cout << "Players within the range " + startingtackles + " and " + endtackles + " are : \n";
+            displayPlayers(player);
+            break;
+         }
+
+         case 6:{
+            string startingassists,endassists;
+            readRange(startingassists,endassists,"assists");
+            for(auto p:Players){
+               if(stoi(p.assists) >= stoi(startingassists) and stoi(p.assists) <= stoi(endassists))
+                  player.push_back(p);
+            }
+            cout << "Players within the range " + startingassists + " and " + endassists + " are : \n";
             displayPlayers(player);
             break;
          }
 
          case 7:{
-            string startingassists,endassists;
-            readRange(startingassists,endassists,"assists");
+            string startingmom,endmom;
+            readRange(startingmom,endmom,"man of the match awards");
             for(auto p:Players){
-               if(p.assists >= startingassists and p.assists <= endassists)
+               if(stoi(p.manofthematch) >= stoi(startingmom) and stoi(p.manofthematch) <= stoi(endmom))
                   player.push_back(p);
             }
-            cout << "Players within the range are: \n";
+            cout << "Players within the range " + startingmom + " and " + endmom + " are : \n";
             displayPlayers(player);
             break;
          }
 
          case 8:{
-            string startingmom,endmom;
-            readRange(startingmom,endmom,"man of the match awards");
-            for(auto p:Players){
-               if(p.manofthematch >= startingmom and p.manofthematch <= endmom)
-                  player.push_back(p);
-            }
-            cout << "Players within the range are: \n";
-            displayPlayers(player);
-            break;
-         }
-
-         case 9:{
             string startingrating,endrating;
             readRange(startingrating,endrating,"rating");
             for(auto p:Players){
-               if(p.rating >= startingrating and p.rating <= endrating)
+               if(stof(p.rating) >= stof(startingrating) and stof(p.rating) <= stof(endrating))
                   player.push_back(p);
             }
-            cout << "Players within the range are: \n";
+            cout << "Players within the range " + startingrating + " and " + endrating + " are : \n";
             displayPlayers(player);
             break;
          }
 
-         default: cout << "Invalid choice\n";
+         default: message("Invalid choice",60);
       }
    }else{
-      cout << "Enter valid choice\n";
+      message("Invalid choice",60);
    }
 }
 
 void notAdmin(){
-   while(1){
-      string choice;
-      cout << "1.Display players list\n2.Search a player\n3.Sort players\n4.Filter players\n5.Signout";
-      getline(cin,choice);
-      choice = trim_copy(choice);
+   string choice;
+   bool valid;
 
-      if(!isValidChoice(choice,1,5)){
-           cout << "Invalid option\n";
-           continue;
+   while(1){
+      vector<string> menu = {"Display players list","Search a player","Sort players","Filter players","Signout"};
+      valid = menuWrapper(menu,choice);
+      
+      if(!valid){    
+        message("Invalid choice",60);
+        continue;
       }
+
       switch(stoi(choice)){
          case 1: displayPlayers(Players);break;
          case 2 : searchAPlayer();break;
@@ -880,36 +814,31 @@ void notAdmin(){
 
 void signUp(User u){
    string username,password,confirmpassword;
-   cout << "Enter username\n";
-   getline(cin,username);
-   username = trim_copy(username);
-   username = trim_copy(username);
-   int exists = u.evaluate(1,username," ");
+   int exists;
+
+   password = form("username");
+   exists = u.evaluate(1,username," ");
+   
    if(exists == 2 or exists == 0 ){
-      cout << "Success! New user created\n";
+      message("Success! New user created",55);
       if(exists == 2){
          deleteFromUserFile(username);
       } 
    }else{
-      cout << "User already exists\n";
+      message("User already exists",55);
       return;
    }
-
-   cout << "Enter password\n";
-   getline(cin,password);
-   password = trim_copy(password);
-   cout << "Enter password again\n";
-   getline(cin,confirmpassword);
-   confirmpassword = trim_copy(confirmpassword);
-   password = trim_copy(password);
-   confirmpassword = trim_copy(confirmpassword);
+   
+   password = form("password");
+   confirmpassword = form("password again");
+   
    if(password == confirmpassword){
       u.setUserName(username);
       u.setPassword(password);
       u.pack();
       u.write_to_file();  
    }else{
-      cout << "Passwords don't match\n";
+      message("Passwords don't match",55);
    }
 }
 
@@ -917,34 +846,24 @@ int signIn(User u){
    heading();
    string username,password;
    int exists;
-   paddedOutput(63,"Sign In\n",1);
+   
+   paddedOutput("Sign In\n",60,1);
    seth(2); 
-   paddedOutput(35,"Enter username: "); 
-   getline(cin,username);
-   cout << endl;
-   paddedOutput(35,"Enter password: "); 
-   getline(cin,password);
-   username = trim_copy(username);
-   password = trim_copy(password);
+   username = form("username");
+   password = form("password");
    u.setUserName(username);
    u.setPassword(password);
    exists = u.evaluate(2,username,password);
    
    if(exists == 1){
-      heading();
-      paddedOutput(75,"Successfully signed in!\n"); 
-      usleep(999000);
+      message("Successfully Signed In!",55);
    }
    else if(exists == 0){
-      heading();
-      paddedOutput(72,"User doesn't exist\n"); 
-      usleep(999000);
+      message("User doesn't exist!",55);
       return -1;
    }
    else{
-      heading();
-      paddedOutput(74,"Passwords don't match\n"); 
-      usleep(999000);
+      message("Passwords don't match",55);
       return -1;
    }
    return u.isAdmin();
@@ -953,14 +872,16 @@ int signIn(User u){
 int main(){
   string choice;
   User u;
+  bool valid;
+  
   init();
 
   while(1){
      vector<string> menu = {"SignIn","SignUp","Exit"};
-     bool valid = menuWrapper(menu,choice);
+     valid = menuWrapper(menu,choice);
      if(!valid){
         heading();
-        paddedOutput(43,"Invalid choice\n");
+        message("Invalid choice",60);
         usleep(700000);
         continue;
      }
