@@ -1,6 +1,0 @@
-Ronaldo|36|Juventus|Portugal|RW|1000|50|20|500|9.1$
-Messi|34|Barcelona|Argentina|CF|1000|40|20|44|9.3$
-Harry Kane|28|Hotspur|England|RW|100|102|30|50|9.4$
-Son|29|Hotspur|Korea|RW|100|100|100|19|8.2$
-Neymar|30|PSG|Brazil|CF|1000|20|20|40|9.5$
-Erling Haaland|22|Borrusia Dortmund|Norway|CF|1000|20|20|20|9.4$
