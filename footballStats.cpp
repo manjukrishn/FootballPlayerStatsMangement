@@ -816,7 +816,7 @@ void signUp(User u){
    string username,password,confirmpassword;
    int exists;
 
-   password = form("username");
+   username = form("username");
    exists = u.evaluate(1,username," ");
    
    if(exists == 2 or exists == 0 ){
